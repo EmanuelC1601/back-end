@@ -1,6 +1,6 @@
 const mysql = require('mysql2');
 
-// Configuración mejorada para Render
+// Configuración de la base de datos
 const dbConfig = {
   host: process.env.DB_HOST || 'db39383.public.databaseasp.net',
   port: process.env.DB_PORT || 3306,
@@ -10,19 +10,19 @@ const dbConfig = {
   
   // 🔥 CONFIGURACIÓN CRÍTICA PARA RENDER:
   waitForConnections: true,
-  connectionLimit: 5,           // REDUCE para plan Free
+  connectionLimit: 5,           // Reducido para plan Free
   queueLimit: 0,
-  connectTimeout: 10000,        // 10 segundos
-  acquireTimeout: 10000,
+  connectTimeout: 15000,        // 15 segundos para conexión inicial
+  acquireTimeout: 10000,        // 10 segundos para adquirir conexión
   enableKeepAlive: true,
-  keepAliveInitialDelay: 10000,
+  keepAliveInitialDelay: 10000, // 10 segundos
   
-  // SSL para conexión externa
+  // SSL para conexión externa segura
   ssl: {
     rejectUnauthorized: false
   },
   
-  // Soporte para timezones
+  // Timezone y codificación
   timezone: 'Z',
   dateStrings: true,
   charset: 'utf8mb4'
@@ -32,92 +32,94 @@ console.log('🔧 Configuración de BD:', {
   host: dbConfig.host,
   database: dbConfig.database,
   user: dbConfig.user,
-  ssl: dbConfig.ssl ? 'activado' : 'desactivado'
+  ssl: dbConfig.ssl ? 'activado' : 'desactivado',
+  connectionLimit: dbConfig.connectionLimit
 });
 
-// Crear pool con manejo de errores
-let pool;
+// Crear pool de conexiones
+const pool = mysql.createPool(dbConfig);
 
-function createPool() {
-  pool = mysql.createPool(dbConfig);
-  
-  // Manejar eventos del pool
-  pool.on('connection', (connection) => {
-    console.log('🔄 Nueva conexión MySQL establecida');
-    // Ejecutar ping cada 30 segundos para mantener viva la conexión
-    setInterval(() => {
-      connection.ping();
-    }, 30000);
-  });
-  
-  pool.on('error', (err) => {
-    console.error('❌ Error en pool MySQL:', err);
-    if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-      console.log('🔄 Reconectando MySQL en 2 segundos...');
-      setTimeout(() => {
-        pool.end(() => {
-          createPool();
-        });
-      }, 2000);
-    }
-  });
-  
-  return pool.promise();
-}
+// Crear versión con promesas
+const promisePool = pool.promise();
 
-const promisePool = createPool();
+// Eventos para monitoreo
+pool.on('connection', (connection) => {
+  console.log('🔄 Nueva conexión MySQL establecida (ID:', connection.threadId, ')');
+});
 
-// Función con reintentos
-const executeWithRetry = async (sql, params, retries = 3) => {
-  for (let i = 0; i < retries; i++) {
+pool.on('acquire', (connection) => {
+  console.log('📥 Conexión MySQL adquirida (ID:', connection.threadId, ')');
+});
+
+pool.on('release', (connection) => {
+  console.log('📤 Conexión MySQL liberada (ID:', connection.threadId, ')');
+});
+
+pool.on('enqueue', () => {
+  console.log('⏳ Esperando conexión MySQL disponible...');
+});
+
+// Función con reintentos automáticos
+const executeWithRetry = async (sql, params, maxRetries = 3) => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const [result] = await promisePool.execute(sql, params);
       return result;
     } catch (error) {
-      console.error(`❌ Intento ${i + 1}/${retries} falló:`, error.code);
+      console.error(`❌ Intento ${attempt}/${maxRetries} falló:`, error.code || error.message);
       
-      if (error.code === 'ECONNRESET' || error.code === 'PROTOCOL_CONNECTION_LOST') {
-        if (i < retries - 1) {
-          console.log(`⏳ Esperando 2 segundos antes de reintentar...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          continue;
-        }
+      // Si es error de conexión y no es el último intento, esperar y reintentar
+      if ((error.code === 'ECONNRESET' || error.code === 'PROTOCOL_CONNECTION_LOST') && attempt < maxRetries) {
+        const delay = 2000 * attempt; // Delay incremental
+        console.log(`⏳ Esperando ${delay}ms antes de reintentar...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
       }
+      
       throw error;
     }
   }
 };
 
-const queryWithRetry = async (sql, params, retries = 3) => {
-  for (let i = 0; i < retries; i++) {
+const queryWithRetry = async (sql, params, maxRetries = 3) => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const [rows] = await promisePool.query(sql, params);
       return rows;
     } catch (error) {
-      console.error(`❌ Intento ${i + 1}/${retries} falló:`, error.code);
+      console.error(`❌ Intento ${attempt}/${maxRetries} falló:`, error.code || error.message);
       
-      if (error.code === 'ECONNRESET' || error.code === 'PROTOCOL_CONNECTION_LOST') {
-        if (i < retries - 1) {
-          console.log(`⏳ Esperando 2 segundos antes de reintentar...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          continue;
-        }
+      // Si es error de conexión y no es el último intento, esperar y reintentar
+      if ((error.code === 'ECONNRESET' || error.code === 'PROTOCOL_CONNECTION_LOST') && attempt < maxRetries) {
+        const delay = 2000 * attempt; // Delay incremental
+        console.log(`⏳ Esperando ${delay}ms antes de reintentar...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
       }
+      
       throw error;
     }
   }
 };
 
-// Probar conexión
-promisePool.getConnection()
-  .then(connection => {
-    console.log('✅ Conectado a MySQL correctamente');
-    connection.release();
-  })
-  .catch(err => {
-    console.error('❌ Error conectando a MySQL:', err.message);
-  });
+// Probar conexión al iniciar
+async function testConnection() {
+  try {
+    const [result] = await promisePool.query('SELECT 1 + 1 AS test');
+    console.log('✅ Conectado a MySQL correctamente. Test:', result[0].test);
+  } catch (error) {
+    console.error('❌ Error conectando a MySQL:', error.message);
+    console.log('💡 Asegúrate de que:');
+    console.log('   1. La base de datos esté activa');
+    console.log('   2. Las credenciales sean correctas');
+    console.log('   3. El firewall permita conexiones desde Render');
+  }
+}
 
+// Ejecutar test de conexión
+testConnection();
+
+// Exportar funciones
 module.exports = {
   query: async (sql, params) => {
     try {
@@ -142,5 +144,13 @@ module.exports = {
   },
   
   // Para transacciones
-  getConnection: () => promisePool.getConnection()
+  getConnection: async () => {
+    try {
+      const connection = await promisePool.getConnection();
+      return connection;
+    } catch (error) {
+      console.error('❌ Error obteniendo conexión:', error.message);
+      throw error;
+    }
+  }
 };
