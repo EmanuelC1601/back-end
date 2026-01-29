@@ -9,16 +9,24 @@ class Imagen {
       const result = await db.execute(sql, [nombreOriginal, nombreArchivo, ruta, tipo, tamaño]);
       return result.insertId;
     } catch (error) {
+      console.error('❌ Error en Imagen.guardar:', error);
       throw error;
     }
   }
 
-  // Obtener todas las imágenes
+  // Obtener todas las imágenes (con manejo de reconexión)
   static async obtenerTodas() {
     try {
       const sql = `SELECT * FROM Imagenes ORDER BY FechaSubida DESC`;
-      return await db.query(sql);
+      const rows = await db.query(sql);
+      return rows;
     } catch (error) {
+      console.error('❌ Error en Imagen.obtenerTodas:', {
+        code: error.code,
+        message: error.message
+      });
+      
+      // Lanzar error para que el controlador lo maneje
       throw error;
     }
   }
@@ -30,6 +38,7 @@ class Imagen {
       const rows = await db.query(sql, [id]);
       return rows[0];
     } catch (error) {
+      console.error('❌ Error en Imagen.obtenerPorId:', error);
       throw error;
     }
   }
@@ -41,6 +50,7 @@ class Imagen {
       const rows = await db.query(sql, [nombreArchivo]);
       return rows[0];
     } catch (error) {
+      console.error('❌ Error en Imagen.obtenerPorNombreArchivo:', error);
       throw error;
     }
   }
@@ -49,8 +59,10 @@ class Imagen {
   static async eliminar(id) {
     try {
       const sql = `DELETE FROM Imagenes WHERE Id = ?`;
-      return await db.execute(sql, [id]);
+      const result = await db.execute(sql, [id]);
+      return result;
     } catch (error) {
+      console.error('❌ Error en Imagen.eliminar:', error);
       throw error;
     }
   }
@@ -62,6 +74,7 @@ class Imagen {
       const rows = await db.query(sql);
       return rows[0].total;
     } catch (error) {
+      console.error('❌ Error en Imagen.contar:', error);
       throw error;
     }
   }
