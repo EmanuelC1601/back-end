@@ -17,10 +17,10 @@ const dbConfig = {
   enableKeepAlive: true,
   keepAliveInitialDelay: 10000, // 10 segundos
   
-  // SSL para conexión externa segura
-  ssl: {
-    rejectUnauthorized: false
-  },
+  // ⚠️ REMOVEMOS SSL porque el servidor no lo soporta
+  // ssl: {
+  //   rejectUnauthorized: false
+  // },
   
   // Timezone y codificación
   timezone: 'Z',
@@ -32,8 +32,7 @@ console.log('🔧 Configuración de BD:', {
   host: dbConfig.host,
   database: dbConfig.database,
   user: dbConfig.user,
-  ssl: dbConfig.ssl ? 'activado' : 'desactivado',
-  connectionLimit: dbConfig.connectionLimit
+  ssl: 'desactivado' // Porque el servidor no soporta
 });
 
 // Crear pool de conexiones
