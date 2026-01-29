@@ -20,7 +20,7 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:4200',
+  origin: ['http://localhost:4200', 'https://backend-bhit.onrender.com'],
   credentials: true
 }));
 
