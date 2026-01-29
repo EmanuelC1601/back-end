@@ -2,11 +2,11 @@ const mysql = require('mysql2');
 
 // Configuración de la base de datos (ajusta según tu entorno)
 const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST || 'db39383.public.databaseasp.net',
   port: process.env.DB_PORT || 3306,
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_DATABASE || 'proyecto_angular',
+  user: process.env.DB_USER || 'db39383',
+  password: process.env.DB_PASSWORD || 'oK@2#9Hd7Ek+',
+  database: process.env.DB_DATABASE || 'db39383',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
