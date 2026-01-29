@@ -29,14 +29,14 @@ if (!fs.existsSync(uploadsDir)) {
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [
       'https://backend-bhit.onrender.com',
-      'https://tufrontend.onrender.com', // Si hosteas frontend
-      'http://localhost:4200'
+      'http://localhost:4200',
+      'https://tu-frontend-angular.onrender.com' // Si hosteas frontend
     ]
   : ['http://localhost:4200'];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Permitir requests sin origen (Postman, curl, etc)
+    // Permitir requests sin origen (Postman, curl, etc) o desde orígenes permitidos
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) === -1) {
@@ -46,15 +46,25 @@ app.use(cors({
     }
     return callback(null, true);
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 // Servir archivos estáticos (solo en desarrollo)
 if (process.env.NODE_ENV !== 'production') {
   app.use('/uploads', express.static(uploadsDir));
+} else {
+  // En producción, manejar archivos estáticos con advertencia
+  app.use('/uploads', express.static(uploadsDir), (req, res, next) => {
+    if (req.method === 'GET') {
+      console.warn('⚠️ Accediendo a archivo estático en producción:', req.path);
+    }
+    next();
+  });
 }
 
 // Rutas API
@@ -70,7 +80,8 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV,
     host: HOST,
     port: PORT,
-    renderUrl: process.env.RENDER_EXTERNAL_URL
+    renderUrl: process.env.RENDER_EXTERNAL_URL,
+    uploadsDir: uploadsDir
   });
 });
 
@@ -98,7 +109,8 @@ app.get('/', (req, res) => {
       host: HOST,
       port: PORT,
       uploads: uploadsDir,
-      render: process.env.RENDER ? 'Sí' : 'No'
+      render: process.env.RENDER ? 'Sí' : 'No',
+      warning: process.env.NODE_ENV === 'production' ? 'Uploads son temporales en plan Free' : null
     }
   });
 });
@@ -115,6 +127,16 @@ app.use((req, res, next) => {
 // Manejo de errores generales
 app.use((err, req, res, next) => {
   console.error('❌ Error del servidor:', err);
+  
+  // Manejar errores de CORS específicamente
+  if (err.message.includes('CORS')) {
+    return res.status(403).json({
+      success: false,
+      message: 'Acceso bloqueado por política CORS',
+      allowedOrigins: allowedOrigins
+    });
+  }
+  
   res.status(500).json({
     success: false,
     message: 'Error interno del servidor',
