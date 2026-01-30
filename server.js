@@ -28,9 +28,9 @@ if (!fs.existsSync(uploadsDir)) {
 // Middleware CORS configurado dinámicamente
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [
-      'https://backend-bhit.onrender.com',
+      'https://eecangular.onrender.com', // ✅ TU FRONTEND REAL
       'http://localhost:4200',
-      'https://tu-frontend-angular.onrender.com' // Si hosteas frontend
+      'https://backend-bhit.onrender.com'
     ]
   : ['http://localhost:4200'];
 
