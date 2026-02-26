@@ -7,6 +7,7 @@ require('dotenv').config();
 // Importar rutas
 const registroRoutes = require('./routes/registros');
 const imagenRoutes = require('./routes/imagenes');
+const mensajesRoutes = require('./routes/mensajes');
 
 // Crear aplicación Express
 const app = express();
@@ -33,6 +34,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Rutas API
 app.use('/api/registros', registroRoutes);
 app.use('/api/imagenes', imagenRoutes);
+app.use('/api/mensajes', mensajesRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
