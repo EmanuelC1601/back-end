@@ -57,7 +57,6 @@ exports.findAll = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
-
         const search = req.query.search || '';
         const edadMin = req.query.edadMin ? parseInt(req.query.edadMin) : null;
         const edadMax = req.query.edadMax ? parseInt(req.query.edadMax) : null;
@@ -66,8 +65,15 @@ exports.findAll = async (req, res) => {
         const [totalRows] = await Mensaje.count(search, edadMin, edadMax);
         const total = totalRows[0].total;
 
+        // Convertir fechas a ISO string con zona UTC
+        const data = rows.map(row => ({
+            ...row,
+            created_at: row.created_at ? new Date(row.created_at).toISOString() : null,
+            updated_at: row.updated_at ? new Date(row.updated_at).toISOString() : null
+        }));
+
         res.json({
-            data: rows,
+            data: data,
             pagination: {
                 page,
                 limit,
