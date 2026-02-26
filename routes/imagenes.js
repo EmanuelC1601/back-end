@@ -2,12 +2,23 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const ImagenController = require('../controllers/imagenController');
+
+// Configurar directorio de uploads según entorno
+const uploadDir = process.env.NODE_ENV === 'production'
+  ? '/tmp/uploads'
+  : 'uploads/';
+
+// Asegurar que el directorio exista
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // Configurar multer para almacenar imágenes
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -34,7 +45,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: { 
-    fileSize: 5 * 1024 * 1024, // 5MB límite
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024, // 5MB límite
     files: 1 // Solo un archivo
   },
   fileFilter: fileFilter
@@ -80,7 +91,7 @@ router.delete('/eliminar/:id', ImagenController.eliminarImagen);
 // Obtener estadísticas
 router.get('/estadisticas', ImagenController.obtenerEstadisticas);
 
-// Servir imagen
+// Servir imagen (solo para desarrollo, en producción los archivos son temporales)
 router.get('/:filename', ImagenController.servirImagen);
 
 module.exports = router;
