@@ -38,6 +38,8 @@ console.log('🔧 Configuración de BD:', {
 // Crear pool de conexiones
 const pool = mysql.createPool(dbConfig);
 
+promisePool.query("SET time_zone = '-06:00'"); // Ejemplo para México (ajusta según tu región)
+
 // Crear versión con promesas
 const promisePool = pool.promise();
 

@@ -5,9 +5,10 @@ const Mensaje = {};
 
 // Crear un nuevo mensaje
 Mensaje.create = (nombre_completo, email, edad, mensaje) => {
+    const now = new Date(); // Hora del servidor (si es tu laptop, será tu hora local)
     return db.execute(
-        'INSERT INTO mensajes (nombre_completo, email, edad, mensaje) VALUES (?, ?, ?, ?)',
-        [nombre_completo, email, edad, mensaje]
+        'INSERT INTO mensajes (nombre_completo, email, edad, mensaje, created_at) VALUES (?, ?, ?, ?, ?)',
+        [nombre_completo, email, edad, mensaje, now]
     );
 };
 
