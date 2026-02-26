@@ -62,19 +62,18 @@ pool.on('enqueue', () => {
 const executeWithRetry = async (sql, params, maxRetries = 3) => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const [result] = await promisePool.execute(sql, params);
-      return result;
+      // Capturamos rows y fields
+      const [rows, fields] = await promisePool.execute(sql, params);
+      return [rows, fields]; // ✅ Retornamos ambos
     } catch (error) {
       console.error(`❌ Intento ${attempt}/${maxRetries} falló:`, error.code || error.message);
       
-      // Si es error de conexión y no es el último intento, esperar y reintentar
       if ((error.code === 'ECONNRESET' || error.code === 'PROTOCOL_CONNECTION_LOST') && attempt < maxRetries) {
-        const delay = 2000 * attempt; // Delay incremental
+        const delay = 2000 * attempt;
         console.log(`⏳ Esperando ${delay}ms antes de reintentar...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }
-      
       throw error;
     }
   }
@@ -131,13 +130,11 @@ module.exports = {
     }
   },
   
-  execute: async (sql, params) => {
+execute: async (sql, params) => {
     try {
-      return await executeWithRetry(sql, params);
+      return await executeWithRetry(sql, params); // ✅ Ahora retorna el array completo
     } catch (error) {
       console.error('❌ Error final ejecutando SQL:', error.message);
-      console.log('SQL:', sql);
-      console.log('Parámetros:', params);
       throw error;
     }
   },
