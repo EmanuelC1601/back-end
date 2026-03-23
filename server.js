@@ -4,10 +4,14 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
-// Importar rutas
-const registroRoutes = require('./routes/registros');
-const imagenRoutes = require('./routes/imagenes');
-const mensajesRoutes = require('./routes/mensajes');
+// Importar nuevas rutas
+const authRoutes = require('./routes/authRoutes');
+const perfilRoutes = require('./routes/perfilRoutes');
+const usuarioRoutes = require('./routes/usuarioRoutes');
+const moduloRoutes = require('./routes/moduloRoutes');
+const permisosPerfilRoutes = require('./routes/permisosPerfilRoutes');
+const menuRoutes = require('./routes/menuRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 // Crear aplicación Express
 const app = express();
@@ -29,9 +33,9 @@ if (!fs.existsSync(uploadsDir)) {
 // Middleware CORS configurado dinámicamente
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [
-      'https://eecangular.onrender.com', // ✅ TU FRONTEND REAL
+      'https://eecangular.onrender.com', // ✅ TU FRONTEND REAL (ajusta según tu dominio)
       'http://localhost:4200',
-      'https://backend-bhit.onrender.com'
+      'https://backend-bhit.onrender.com' // Opcional: tu propio backend si es necesario
     ]
   : ['http://localhost:4200'];
 
@@ -55,7 +59,7 @@ app.use(cors({
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
-// Servir archivos estáticos (solo en desarrollo)
+// Servir archivos estáticos (solo en desarrollo, o con advertencia en producción)
 if (process.env.NODE_ENV !== 'production') {
   app.use('/uploads', express.static(uploadsDir));
 } else {
@@ -68,12 +72,16 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// Rutas API
-app.use('/api/registros', registroRoutes);
-app.use('/api/imagenes', imagenRoutes);
-app.use('/api/mensajes', mensajesRoutes);
+// Rutas API (nuevas)
+app.use('/api/auth', authRoutes);
+app.use('/api/perfiles', perfilRoutes);
+app.use('/api/usuarios', usuarioRoutes);
+app.use('/api/modulos', moduloRoutes);
+app.use('/api/permisos-perfil', permisosPerfilRoutes);
+app.use('/api/menu', menuRoutes);
+app.use('/api/upload', uploadRoutes);
 
-// Ruta de prueba mejorada
+// Ruta de prueba de salud
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -87,24 +95,50 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Ruta de inicio mejorada
+// Ruta de inicio mejorada con los nuevos endpoints
 app.get('/', (req, res) => {
   res.json({
-    message: 'API del Proyecto Angular',
+    message: 'API del Proyecto - Tercera Unidad',
     version: '1.0.0',
     environment: process.env.NODE_ENV,
     endpoints: {
       health: 'GET /api/health',
-      registros: {
-        insertar: 'POST /api/registros/insertar-automatico',
-        registrar: 'POST /api/registros/registrar-usuario',
-        listar: 'GET /api/registros/obtener-registros'
+      auth: {
+        login: 'POST /api/auth/login',
+        verify: 'GET /api/auth/verify'
       },
-      imagenes: {
-        subir: 'POST /api/imagenes/subir',
-        listar: 'GET /api/imagenes/obtener-todas',
-        eliminar: 'DELETE /api/imagenes/eliminar/:id',
-        ver: 'GET /api/imagenes/:filename'
+      perfiles: {
+        listar: 'GET /api/perfiles',
+        detalle: 'GET /api/perfiles/:id',
+        crear: 'POST /api/perfiles',
+        actualizar: 'PUT /api/perfiles/:id',
+        eliminar: 'DELETE /api/perfiles/:id'
+      },
+      usuarios: {
+        listar: 'GET /api/usuarios',
+        detalle: 'GET /api/usuarios/:id',
+        crear: 'POST /api/usuarios',
+        actualizar: 'PUT /api/usuarios/:id',
+        eliminar: 'DELETE /api/usuarios/:id'
+      },
+      modulos: {
+        listar: 'GET /api/modulos',
+        detalle: 'GET /api/modulos/:id',
+        crear: 'POST /api/modulos',
+        actualizar: 'PUT /api/modulos/:id',
+        eliminar: 'DELETE /api/modulos/:id'
+      },
+      permisos: {
+        listar: 'GET /api/permisos-perfil',
+        detalle: 'GET /api/permisos-perfil/:id',
+        porPerfil: 'GET /api/permisos-perfil/perfil/:idPerfil',
+        crear: 'POST /api/permisos-perfil',
+        actualizar: 'PUT /api/permisos-perfil/:id',
+        eliminar: 'DELETE /api/permisos-perfil/:id'
+      },
+      menu: 'GET /api/menu',
+      upload: {
+        imagenUsuario: 'POST /api/upload/usuario/:id'
       }
     },
     info: {
