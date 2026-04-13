@@ -22,6 +22,16 @@ exports.getAll = async (req, res, next) => {
     }
 };
 
+// ✅ NUEVO: Obtener todos los módulos sin paginación (para selects)
+exports.getAllSimple = async (req, res, next) => {
+    try {
+        const modulos = await Modulo.getAllSimple();
+        res.json(modulos);
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.getById = async (req, res, next) => {
     try {
         const id = req.params.id;

@@ -7,6 +7,9 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 router.use(authMiddleware);
 
+// ⚠️ IMPORTANTE: La ruta /all debe ir ANTES de /:id
+router.get('/all', moduloController.getAllSimple);  // ← NUEVA RUTA
+
 // Obtener todos los módulos (paginado)
 router.get('/', moduloController.getAll);
 

@@ -1,58 +1,88 @@
 // models/permisosPerfilModel.js
-// CORRECCIÓN: agregado método exists() que faltaba y era requerido por el controller
 const db = require('./db');
 
 const PermisosPerfil = {
+    /**
+     * Obtiene todos los permisos con paginación (con nombres de perfil y módulo)
+     */
     async getAll(limit = 5, offset = 0) {
         const sql = `
-            SELECT pp.*, m.strNombreModulo, p.strNombrePerfil
+            SELECT pp.*, 
+                   p.strNombrePerfil, 
+                   m.strNombreModulo 
             FROM permisosperfil pp
-            INNER JOIN modulo m ON pp.idModulo = m.id
             INNER JOIN perfil p ON pp.idPerfil = p.id
+            INNER JOIN modulo m ON pp.idModulo = m.id
+            ORDER BY p.strNombrePerfil, m.strNombreModulo
             LIMIT ? OFFSET ?
         `;
         return await db.query(sql, [limit, offset]);
     },
 
+    /**
+     * Cuenta el total de permisos
+     */
     async getCount() {
         const sql = 'SELECT COUNT(*) as total FROM permisosperfil';
         const result = await db.getOne(sql);
         return result.total;
     },
 
+    /**
+     * Obtiene un permiso por ID
+     */
     async getById(id) {
         const sql = `
-            SELECT pp.*, m.strNombreModulo, p.strNombrePerfil
+            SELECT pp.*, 
+                   p.strNombrePerfil, 
+                   m.strNombreModulo 
             FROM permisosperfil pp
-            INNER JOIN modulo m ON pp.idModulo = m.id
             INNER JOIN perfil p ON pp.idPerfil = p.id
+            INNER JOIN modulo m ON pp.idModulo = m.id
             WHERE pp.id = ?
         `;
         return await db.getOne(sql, [id]);
     },
 
+    /**
+     * Obtiene todos los permisos de un perfil específico (para el menú y edición)
+     */
     async getByPerfil(idPerfil) {
         const sql = `
-            SELECT pp.*, m.strNombreModulo
+            SELECT pp.*, 
+                   p.strNombrePerfil, 
+                   m.strNombreModulo 
             FROM permisosperfil pp
+            INNER JOIN perfil p ON pp.idPerfil = p.id
             INNER JOIN modulo m ON pp.idModulo = m.id
             WHERE pp.idPerfil = ?
+            ORDER BY m.strNombreModulo
         `;
         return await db.query(sql, [idPerfil]);
     },
 
-    // ← MÉTODO AGREGADO: faltaba y el controller lo invocaba
+    /**
+     * Verifica si existe una combinación módulo-perfil
+     * @param {number} idModulo - ID del módulo
+     * @param {number} idPerfil - ID del perfil
+     * @param {number} excludeId - ID a excluir (para actualización)
+     */
     async exists(idModulo, idPerfil, excludeId = null) {
         let sql = 'SELECT id FROM permisosperfil WHERE idModulo = ? AND idPerfil = ?';
-        const params = [idModulo, idPerfil];
+        let params = [idModulo, idPerfil];
+        
         if (excludeId) {
             sql += ' AND id != ?';
             params.push(excludeId);
         }
-        const row = await db.getOne(sql, params);
-        return !!row;
+        
+        const result = await db.getOne(sql, params);
+        return !!result;
     },
 
+    /**
+     * Crea un nuevo permiso
+     */
     async create(data) {
         const sql = `
             INSERT INTO permisosperfil 
@@ -70,12 +100,19 @@ const PermisosPerfil = {
         ]);
     },
 
+    /**
+     * Actualiza un permiso existente
+     */
     async update(id, data) {
         const sql = `
-            UPDATE permisosperfil SET 
-            idModulo = ?, idPerfil = ?,
-            bitAgregar = ?, bitEditar = ?, bitConsulta = ?, 
-            bitEliminar = ?, bitDetalle = ? 
+            UPDATE permisosperfil 
+            SET idModulo = ?, 
+                idPerfil = ?, 
+                bitAgregar = ?, 
+                bitEditar = ?, 
+                bitConsulta = ?, 
+                bitEliminar = ?, 
+                bitDetalle = ?
             WHERE id = ?
         `;
         return await db.update(sql, [
@@ -90,29 +127,12 @@ const PermisosPerfil = {
         ]);
     },
 
+    /**
+     * Elimina un permiso por ID
+     */
     async delete(id) {
         const sql = 'DELETE FROM permisosperfil WHERE id = ?';
         return await db.delete(sql, [id]);
-    },
-
-    async getByModuloAndPerfil(idModulo, idPerfil) {
-        const sql = 'SELECT * FROM permisosperfil WHERE idModulo = ? AND idPerfil = ?';
-        return await db.getOne(sql, [idModulo, idPerfil]);
-    },
-
-    async getPermisosPorPerfil(idPerfil) {
-        const sql = `
-            SELECT m.id as idModulo, m.strNombreModulo, 
-                   COALESCE(pp.bitAgregar, 0) as bitAgregar,
-                   COALESCE(pp.bitEditar, 0) as bitEditar,
-                   COALESCE(pp.bitConsulta, 0) as bitConsulta,
-                   COALESCE(pp.bitEliminar, 0) as bitEliminar,
-                   COALESCE(pp.bitDetalle, 0) as bitDetalle
-            FROM modulo m
-            LEFT JOIN permisosperfil pp ON m.id = pp.idModulo AND pp.idPerfil = ?
-            ORDER BY m.strNombreModulo
-        `;
-        return await db.query(sql, [idPerfil]);
     }
 };
 
