@@ -23,9 +23,13 @@ exports.getAll = async (req, res, next) => {
 };
 
 // ✅ NUEVO: Obtener todos los módulos sin paginación (para selects)
+// controllers/moduloController.js
+
+// ✅ NUEVO: Obtener todos los módulos sin paginación (para selects)
 exports.getAllSimple = async (req, res, next) => {
     try {
         const modulos = await Modulo.getAllSimple();
+        console.log('📡 getAllSimple devolviendo:', modulos.length, 'módulos');
         res.json(modulos);
     } catch (error) {
         next(error);
