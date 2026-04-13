@@ -58,11 +58,11 @@ app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 // Static uploads
 app.use('/uploads', express.static(uploadsDir));
 
-// API
+// ✅ API RUTAS CORREGIDAS (SINGULAR como espera el frontend)
 app.use('/api/auth', authRoutes);
-app.use('/api/perfiles', perfilRoutes);
-app.use('/api/usuarios', usuarioRoutes);
-app.use('/api/modulos', moduloRoutes);
+app.use('/api/perfil', perfilRoutes);           // ✅ ANTES: /api/perfiles
+app.use('/api/usuario', usuarioRoutes);         // ✅ ANTES: /api/usuarios
+app.use('/api/modulo', moduloRoutes);           // ✅ ANTES: /api/modulos
 app.use('/api/permisos-perfil', permisosPerfilRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/upload', uploadRoutes);
