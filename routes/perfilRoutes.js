@@ -19,7 +19,8 @@ router.post(
     '/',
     [
         body('strNombrePerfil').notEmpty().withMessage('El nombre del perfil es requerido'),
-        body('bitAdministrador').isBoolean().withMessage('bitAdministrador debe ser booleano')
+        body('bitAdministrador').isBoolean().withMessage('bitAdministrador debe ser booleano'),
+        body('strDescripcion').optional().isLength({ max: 255 }).withMessage('La descripción no puede exceder 255 caracteres')
     ],
     perfilController.create
 );
@@ -29,7 +30,8 @@ router.put(
     '/:id',
     [
         body('strNombrePerfil').notEmpty().withMessage('El nombre del perfil es requerido'),
-        body('bitAdministrador').isBoolean().withMessage('bitAdministrador debe ser booleano')
+        body('bitAdministrador').isBoolean().withMessage('bitAdministrador debe ser booleano'),
+        body('strDescripcion').optional().isLength({ max: 255 }).withMessage('La descripción no puede exceder 255 caracteres')
     ],
     perfilController.update
 );

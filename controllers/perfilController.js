@@ -43,8 +43,14 @@ exports.create = async (req, res, next) => {
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { strNombrePerfil, bitAdministrador } = req.body;
-        const id = await Perfil.create({ strNombrePerfil, bitAdministrador });
+        const { strNombrePerfil, bitAdministrador, strDescripcion } = req.body;
+        
+        const id = await Perfil.create({ 
+            strNombrePerfil, 
+            bitAdministrador,
+            strDescripcion 
+        });
+        
         res.status(201).json({ id, message: 'Perfil creado exitosamente' });
     } catch (error) {
         next(error);
@@ -59,7 +65,7 @@ exports.update = async (req, res, next) => {
         }
 
         const id = req.params.id;
-        const { strNombrePerfil, bitAdministrador } = req.body;
+        const { strNombrePerfil, bitAdministrador, strDescripcion } = req.body;
 
         // Verificar si existe
         const perfil = await Perfil.getById(id);
@@ -67,7 +73,12 @@ exports.update = async (req, res, next) => {
             return res.status(404).json({ message: 'Perfil no encontrado' });
         }
 
-        await Perfil.update(id, { strNombrePerfil, bitAdministrador });
+        await Perfil.update(id, { 
+            strNombrePerfil, 
+            bitAdministrador,
+            strDescripcion 
+        });
+        
         res.json({ message: 'Perfil actualizado correctamente' });
     } catch (error) {
         next(error);

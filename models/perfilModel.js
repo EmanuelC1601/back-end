@@ -9,7 +9,7 @@ const Perfil = {
      * @returns {Promise<Array>}
      */
     async getAll(limit = 5, offset = 0) {
-        const sql = 'SELECT * FROM perfil LIMIT ? OFFSET ?';
+        const sql = 'SELECT * FROM perfil ORDER BY id LIMIT ? OFFSET ?';
         return await db.query(sql, [limit, offset]);
     },
 
@@ -32,20 +32,29 @@ const Perfil = {
 
     /**
      * Crea un nuevo perfil
-     * @param {Object} data - { strNombrePerfil, bitAdministrador }
+     * @param {Object} data - { strNombrePerfil, bitAdministrador, strDescripcion }
      * @returns {Promise<number>} - ID insertado
      */
     async create(data) {
-        const sql = 'INSERT INTO perfil (strNombrePerfil, bitAdministrador) VALUES (?, ?)';
-        return await db.insert(sql, [data.strNombrePerfil, data.bitAdministrador || false]);
+        const sql = 'INSERT INTO perfil (strNombrePerfil, bitAdministrador, strDescripcion) VALUES (?, ?, ?)';
+        return await db.insert(sql, [
+            data.strNombrePerfil, 
+            data.bitAdministrador || false,
+            data.strDescripcion || null
+        ]);
     },
 
     /**
      * Actualiza un perfil existente
      */
     async update(id, data) {
-        const sql = 'UPDATE perfil SET strNombrePerfil = ?, bitAdministrador = ? WHERE id = ?';
-        return await db.update(sql, [data.strNombrePerfil, data.bitAdministrador, id]);
+        const sql = 'UPDATE perfil SET strNombrePerfil = ?, bitAdministrador = ?, strDescripcion = ? WHERE id = ?';
+        return await db.update(sql, [
+            data.strNombrePerfil, 
+            data.bitAdministrador,
+            data.strDescripcion || null,
+            id
+        ]);
     },
 
     /**
