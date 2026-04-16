@@ -89,34 +89,52 @@ exports.update = async (req, res, next) => {
             strNumeroCelular
         } = req.body;
 
+        console.log('📡 Update recibido:', { id, strNombreUsuario, idPerfil, idEstadoUsuario, strCorreo, strNumeroCelular });
+
         const usuario = await Usuario.getById(id);
         if (!usuario) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
 
-        if (strNombreUsuario !== usuario.strNombreUsuario) {
+        // Verificar nombre único si cambió
+        if (strNombreUsuario && strNombreUsuario !== usuario.strNombreUsuario) {
             const existente = await Usuario.getByUsername(strNombreUsuario);
             if (existente) {
                 return res.status(400).json({ message: 'El nombre de usuario ya está en uso' });
             }
         }
 
+        // Hashear contraseña si se proporcionó
         let pwdParaGuardar = undefined;
-        if (strPwd) {
+        if (strPwd && strPwd.trim() !== '') {
             pwdParaGuardar = await bcrypt.hash(strPwd, 10);
         }
 
-        await Usuario.update(id, {
-            strNombreUsuario,
-            idPerfil,
-            strPwd:          pwdParaGuardar,
-            idEstadoUsuario,
-            strCorreo,
-            strNumeroCelular: strNumeroCelular || null
-        });
+        // Convertir idEstadoUsuario a número (1 o 0) para la base de datos
+        const estadoNumero = (idEstadoUsuario === true || idEstadoUsuario === 1 || idEstadoUsuario === 'true') ? 1 : 0;
+
+        // Construir objeto con solo los campos que vienen
+        const updateData = {
+            strNombreUsuario: strNombreUsuario || usuario.strNombreUsuario,
+            idPerfil: idPerfil || usuario.idPerfil,
+            strCorreo: strCorreo || usuario.strCorreo,
+            strNumeroCelular: strNumeroCelular !== undefined ? strNumeroCelular : usuario.strNumeroCelular,
+            idEstadoUsuario: estadoNumero,
+            strImagen: usuario.strImagen
+        };
+
+        // Solo incluir contraseña si se proporcionó
+        if (pwdParaGuardar) {
+            updateData.strPwd = pwdParaGuardar;
+        }
+
+        console.log('📡 UpdateData a guardar:', updateData);
+
+        await Usuario.update(id, updateData);
 
         res.json({ message: 'Usuario actualizado correctamente' });
     } catch (error) {
+        console.error('❌ Error en update:', error);
         next(error);
     }
 };

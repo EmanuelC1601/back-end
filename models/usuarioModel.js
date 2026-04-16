@@ -67,47 +67,54 @@ const Usuario = {
     },
 
     /**
-     * Actualiza un usuario existente
-     * Si no se proporciona nueva contraseña, no la actualiza
-     */
-    async update(id, data) {
-        let sql, params;
-        if (data.strPwd) {
-            sql = `
-                UPDATE usuario SET 
-                strNombreUsuario = ?, idPerfil = ?, strPwd = ?, idEstadoUsuario = ?, 
-                strCorreo = ?, strNumeroCelular = ?, strImagen = ? 
-                WHERE id = ?
-            `;
-            params = [
-                data.strNombreUsuario,
-                data.idPerfil,
-                data.strPwd,
-                data.idEstadoUsuario,
-                data.strCorreo,
-                data.strNumeroCelular,
-                data.strImagen,
-                id
-            ];
-        } else {
-            sql = `
-                UPDATE usuario SET 
-                strNombreUsuario = ?, idPerfil = ?, idEstadoUsuario = ?, 
-                strCorreo = ?, strNumeroCelular = ?, strImagen = ? 
-                WHERE id = ?
-            `;
-            params = [
-                data.strNombreUsuario,
-                data.idPerfil,
-                data.idEstadoUsuario,
-                data.strCorreo,
-                data.strNumeroCelular,
-                data.strImagen,
-                id
-            ];
-        }
-        return await db.update(sql, params);
-    },
+ * Actualiza un usuario existente
+ */
+async update(id, data) {
+    // Construir dinámicamente la consulta SQL
+    const fields = [];
+    const values = [];
+    
+    if (data.strNombreUsuario !== undefined) {
+        fields.push('strNombreUsuario = ?');
+        values.push(data.strNombreUsuario);
+    }
+    if (data.idPerfil !== undefined) {
+        fields.push('idPerfil = ?');
+        values.push(data.idPerfil);
+    }
+    if (data.strPwd !== undefined) {
+        fields.push('strPwd = ?');
+        values.push(data.strPwd);
+    }
+    if (data.idEstadoUsuario !== undefined) {
+        fields.push('idEstadoUsuario = ?');
+        values.push(data.idEstadoUsuario);
+    }
+    if (data.strCorreo !== undefined) {
+        fields.push('strCorreo = ?');
+        values.push(data.strCorreo);
+    }
+    if (data.strNumeroCelular !== undefined) {
+        fields.push('strNumeroCelular = ?');
+        values.push(data.strNumeroCelular);
+    }
+    if (data.strImagen !== undefined) {
+        fields.push('strImagen = ?');
+        values.push(data.strImagen);
+    }
+    
+    if (fields.length === 0) {
+        return; // No hay nada que actualizar
+    }
+    
+    values.push(id);
+    const sql = `UPDATE usuario SET ${fields.join(', ')} WHERE id = ?`;
+    
+    console.log('📡 SQL Update:', sql);
+    console.log('📡 Values:', values);
+    
+    return await db.update(sql, values);
+},
 
     /**
      * Elimina un usuario por ID
